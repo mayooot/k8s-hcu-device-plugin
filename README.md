@@ -7,7 +7,90 @@ Copyright 2026 Hygon Information Technology Co., Ltd.
 
 Hygon HCU Device Plugin 是一个 Kubernetes 设备插件（Device Plugin），以 DaemonSet 方式部署到每个 HCU 节点，实现 [Kubernetes Device Plugin API](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/)，将节点上的海光 HCU 资源注册到集群，供 Pod 申请使用。
 
-当前版本：**v3.0.2**
+当前版本：**v3.0.2-whitelist**（基于上游 `v3.0.2`）
+
+## 分支增强特性：物理卡白名单过滤（`HCU_VISIBLE_DEVICES`）
+
+针对**同一台海光节点需同时给宿主机 Docker/本地进程与 K8s 混用**的场景，本分支新增物理卡槽白名单过滤能力，支持通过 CLI 参数或环境变量仅向 K8s 暴露指定物理卡（保留 `hygon.com/hcu` / `hygon.com/dcu` 整卡资源名，其余卡槽留给宿主机使用，彻底避免撞卡）：
+
+- **参数 / 环境变量**：`--visible-devices` / `HCU_VISIBLE_DEVICES`（同时兼容 `DCU_VISIBLE_DEVICES`）
+- **支持格式**：
+  - `"all"` 或留空：暴露全部物理卡（默认，与上游一致）
+  - `"none"`：不暴露任何卡
+  - 卡序号（`DvInd`）：如 `"0,1"` 或 `"4,5"`
+  - PCI Bus ID（推荐，物理槽位固定不漂移）：如 `"0000:16:00.0,0000:19:00.0"`（也兼容简写 `"16:00.0,19:00.0"`）
+- **预构建镜像**：
+  - `mayooot/k8s-hcu-device-plugin:v3.0.2-whitelist`（Digest: `sha256:5f86e13ecaf57d4f5157eec4d6c30d1df61463ba7531316c645854220a9bf770`）
+  - Docker Hub: https://hub.docker.com/r/mayooot/k8s-hcu-device-plugin/tags
+- **推荐部署方式（`Node Label + nodeSelector` 多 DaemonSet 模式，完整示例见 [`deployment/static/k8s-hcu-plugin-whitelist.yaml`](deployment/static/k8s-hcu-plugin-whitelist.yaml)）**：
+
+```yaml
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: hcu-device-plugin-mix-2
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      name: hcu-dp-ds-mix-2
+  template:
+    metadata:
+      labels:
+        name: hcu-dp-ds-mix-2
+    spec:
+      tolerations:
+      - key: CriticalAddonsOnly
+        operator: Exists
+      nodeSelector:
+        hygon.com/hcu: "true"   # 旧版 *CU 集群可改为 hygon.com/dcu: "true"
+        hcu-pool: mix-2         # kubectl label node <node> hcu-pool=mix-2
+      containers:
+      - image: mayooot/k8s-hcu-device-plugin:v3.0.2-whitelist
+        name: hcu-dp-cntr
+        securityContext:
+          privileged: true
+        env:
+          - name: "HCU_VISIBLE_DEVICES"
+            value: "0000:16:00.0,0000:19:00.0" # 或 "4,5" / "0,1"
+          - name: "RESOURCE_PREFIX"
+            value: "hcu"                      # 旧版 *CU 集群设为 "dcu"
+          - name: "RESOURCE_REGISTER_STRATEGY"
+            value: "mixed"
+          - name: "PULSE"
+            value: "30"
+          - name: "POLICY"
+            value: "0"
+          - name: "NODE_NAME"
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+        volumeMounts:
+          - name: dp
+            mountPath: /var/lib/kubelet/device-plugins
+          - name: dev
+            mountPath: /dev
+          - name: etc-vdev
+            mountPath: /etc/vdev
+            readOnly: true
+          - name: hyhal
+            mountPath: /opt/hyhal
+            readOnly: true
+      volumes:
+        - name: dp
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
+        - name: etc-vdev
+          hostPath:
+            path: /etc/vdev
+            type: DirectoryOrCreate
+        - name: dev
+          hostPath:
+            path: /dev
+        - name: hyhal
+          hostPath:
+            path: /opt/hyhal
+```
 
 ## 目录
 

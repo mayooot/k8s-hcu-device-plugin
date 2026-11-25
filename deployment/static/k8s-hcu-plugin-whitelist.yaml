@@ -29,7 +29,7 @@ spec:
         hygon.com/hcu: "true"
         hcu-pool: mix-2
       containers:
-      - image: <your-registry>/hcu-device-plugin:v3.0.2-whitelist
+      - image: mayooot/k8s-hcu-device-plugin:v3.0.2-whitelist
         name: hcu-dp-cntr
         securityContext:
           privileged: true
@@ -99,7 +99,7 @@ spec:
         hygon.com/hcu: "true"
         hcu-pool: full
       containers:
-      - image: <your-registry>/hcu-device-plugin:v3.0.2-whitelist
+      - image: mayooot/k8s-hcu-device-plugin:v3.0.2-whitelist
         name: hcu-dp-cntr
         securityContext:
           privileged: true
