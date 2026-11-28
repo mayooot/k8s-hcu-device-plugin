@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright 2026 Hygon Information Technology Co., Ltd.
 #
-# Example multi-DaemonSet deployment using Node Labels + HCU_VISIBLE_DEVICES
+# Example multi-DaemonSet deployment using Node Labels + <PREFIX>_VISIBLE_DEVICES
 # (following the GKE / NVIDIA device-plugin node-label pattern).
+# The whitelist env var is derived from RESOURCE_PREFIX: HCU_VISIBLE_DEVICES
+# for hcu, DCU_VISIBLE_DEVICES for dcu.
 #
 # Label nodes by pool, e.g.:
 #   kubectl label node dcu-bw10-0001.host.hh-d.brainpp.cn hcu-pool=mix-2

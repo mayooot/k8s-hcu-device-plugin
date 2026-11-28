@@ -255,7 +255,10 @@ func GetAllVirtualHCUs() map[string][]dcgm.VDeviceInfo {
 			virtualHCUs[vkey] = []dcgm.VDeviceInfo{virtualHCU}
 		}
 	}
-	return virtualHCUs
+	// Drop slices of hidden physical cards: a vHCU on a card the whitelist
+	// hides must not be reported, or the scheduler could place a Pod on a
+	// card a host process is using.
+	return filterVirtualHCUs(virtualHCUs, GetAllPhysicalDevices())
 }
 
 // GetAllMigHCUs get all MIG HCUs in map format
@@ -279,7 +282,8 @@ func GetAllMigHCUs() map[string][]dcgm.MigInfo {
 			migHCUs[migKey] = []dcgm.MigInfo{migDeviceInfo}
 		}
 	}
-	return migHCUs
+	// Same parent-card rule as vHCUs: slices of hidden cards stay hidden.
+	return filterMigHCUs(migHCUs, GetAllPhysicalDevices())
 }
 
 // GetAllPhysicalDevices Get All Physical HCUs

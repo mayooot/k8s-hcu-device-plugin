@@ -265,9 +265,8 @@ func main() {
 		},
 		&cli.StringFlag{
 			Name:        "visible-devices",
-			Usage:       "comma-separated whitelist of physical HCU indices or PCI bus IDs to expose (e.g. 0,1 or 0000:06:00.0,0000:09:00.0), or all/none",
+			Usage:       "comma-separated whitelist of physical HCU indices or PCI bus IDs to expose (e.g. 0,1 or 0000:06:00.0,0000:09:00.0), or all/none; also read from <PREFIX>_VISIBLE_DEVICES, derived from --resource-prefix (HCU_VISIBLE_DEVICES for hcu, DCU_VISIBLE_DEVICES for dcu)",
 			Destination: &visibleDevices,
-			EnvVars:     []string{"HCU_VISIBLE_DEVICES", "DCU_VISIBLE_DEVICES"},
 		},
 	}
 
